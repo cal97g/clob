@@ -8,3 +8,10 @@ edition = "2018"
 
 [dependencies]
 rust_decimal = "1.7.0"
+
+[profile.bench]
+opt-level = 3
+panic = "abort"
+
+[profile.release]
+panic = "abort"
