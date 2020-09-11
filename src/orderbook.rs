@@ -89,7 +89,7 @@ impl Orderbook {
 
     // where can I find the information for this price?
     pub fn price_index(&self, price_point: Decimal) -> Option<usize> {
-        let index = ((self.start_price - price_point) * self.min_step).to_usize().unwrap();
+        let index = ((price_point - self.start_price) / self.min_step).to_usize().unwrap();
 
 
         match index {
@@ -123,6 +123,12 @@ mod test {
 
         assert_eq!(some_market.bid_pointer, 12);
         assert_eq!(some_market.ask_pointer, 18);
+
+        assert_eq!(some_market.spread_steps(), 6);
+        assert_eq!(some_market.spread_cost(), Decimal::from_str("0.06").unwrap());
+
+        assert_eq!(some_market.levels[0].price, Decimal::from_str("12299.88").unwrap());
+        assert_eq!(some_market.start_price, Decimal::from_str("12299.88").unwrap());
 
         assert_eq!(some_market.price_index(Decimal::from_str("12299.89").unwrap()).unwrap(), 1);
         assert_eq!(some_market.price_index(Decimal::from_str("12300.17").unwrap()).unwrap(), 29);
