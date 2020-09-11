@@ -22,7 +22,6 @@ impl Level {
     }
 }
 
-
 #[derive(Default)]
 pub struct Orderbook {
     // the price at levels[0]
@@ -91,7 +90,6 @@ impl Orderbook {
     pub fn price_index(&self, price_point: Decimal) -> Option<usize> {
         let index = ((price_point - self.start_price) / self.min_step).to_usize().unwrap();
 
-
         match index {
             0..=ORDER_BOOK_LEVELS => Some(index),
             _ => None
@@ -102,14 +100,20 @@ impl Orderbook {
     pub fn price_quantity(&self, price_point: Decimal) -> Decimal {
         self.levels[self.price_index(price_point).unwrap()].quantity
     }
+
+    pub fn limit_order(price: Decimal, quantity: Decimal) {
+
+    }
+
+    pub fn market_order(quantity: Decimal) {
+
+    }
 }
 
 
 #[cfg(test)]
 mod test {
     use super::*;
-    
-
 
     #[test]
     fn test_Orderbook_create() {
@@ -117,7 +121,7 @@ mod test {
         let ask = Decimal::from_f32(123.06).unwrap();
         let min_step = Decimal::from_str("0.01").unwrap();
         
-        let some_market = Orderbook::new(bid, ask, min_step);
+        let mut some_market = Orderbook::new(bid, ask, min_step);
 
         // println!("{:?}", some_market.levels);
 
@@ -132,16 +136,9 @@ mod test {
 
         assert_eq!(some_market.price_index(Decimal::from_str("12299.89").unwrap()).unwrap(), 1);
         assert_eq!(some_market.price_index(Decimal::from_str("12300.17").unwrap()).unwrap(), 29);
-    }
 
-    #[test]
-    fn test_Orderbook_spread_steps() {
-
-    }
-
-    #[test]
-    fn test_Orderbook_spread_cost() {
-
+        some_market.levels[29].quantity = Decimal::from_str("1234.5566778899").unwrap();
+        assert_eq!(some_market.price_quantity(Decimal::from_str("12300.17").unwrap()), Decimal::from_str("1234.5566778899").unwrap());
     }
 
 
