@@ -54,6 +54,21 @@ impl Orderbook {
         true
     }
 
+    fn rebalance(&mut self) {
+        let ask_distance_from_top = 32 - self.ask_pointer;
+        let bid_distance_from_bottom = 32 - self.bid_pointer;
+
+        switch ask_distance_from_top {
+            >self.min_depth => {
+
+            },
+            _ => {},
+        }
+
+        switch 
+
+    }
+
     fn new_levels(&mut self, best_bid_price: Decimal, best_ask_price: Decimal, min_step: Decimal) {
         // find a midpoint to the nearest step: (best_ask_price - best_bid_price) / 2
         // the ask lives above the midpoint: (ask_price - mid_price) / step levels
@@ -101,11 +116,15 @@ impl Orderbook {
         self.levels[self.price_index(price_point).unwrap()].quantity
     }
 
-    pub fn limit_order(price: Decimal, quantity: Decimal) {
+    pub fn limit_order(&mut self, price: Decimal, quantity: Decimal) {
+        self.levels[self.price_index(price).unwrap()].quantity += quantity;
+    }
+
+    pub fn market_order(&self, quantity: Decimal) {
 
     }
 
-    pub fn market_order(quantity: Decimal) {
+    pub fn trade(&self, price: Decimal, quantity: Decimal) {
 
     }
 }
