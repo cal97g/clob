@@ -4,7 +4,7 @@ const ORDER_BOOK_LEVELS: usize = 32;
 const MIDDLE_LEVEL: u32 = 15;
 const MINIMUM_PAD: usize = 3;
 
-#[derive(Default,Debug)]
+#[derive(Default,Debug,Copy,Clone)]
 pub struct Level {
     // price in sats or cents
     price: Decimal,
@@ -34,39 +34,88 @@ pub struct Orderbook {
     ask_pointer: u32,
     
     // the minimum depth which must be kept either side of bid/ask
-    min_depth: u8,
+    min_depth: u32,
 
     // min_step
     min_step: Decimal,
 
     levels: [Level; ORDER_BOOK_LEVELS],
+
+    // the latest update id the book has applied
+    update_id: u64,
 }
 
 impl Orderbook {
     pub fn new(best_bid_price: Decimal, best_ask_price: Decimal, min_step: Decimal) -> Orderbook {
         let mut newobject: Orderbook = Default::default();
         newobject.min_step = min_step;
+        newobject.min_depth = 6;
         newobject.new_levels(best_bid_price, best_ask_price, min_step);
         newobject
     }
 
-    fn rebuild(&mut self) -> bool {
-        true
-    }
+    pub fn rebalance(&mut self) -> bool {
+        // I | P   | Q   | POINTER
+        // 0 | 1.0 | 20  | 
+        // 1 | 2.0 | 10  | BID
+        // 2 | 3.0 |     | SPREAD > 1
+        // 3 | 4.0 | 5   | ASK
+        // 4 | 5.0 | 25  | 
+        //
+        // ask_depth = 5 - (3 + 1) = 1
+        // bid_depth = 1
 
-    fn rebalance(&mut self) {
-        let ask_distance_from_top = 32 - self.ask_pointer;
-        let bid_distance_from_bottom = 32 - self.bid_pointer;
+        let ask_depth = 32 - self.ask_pointer + 1;
+        let bid_depth = self.bid_pointer;
 
-        switch ask_distance_from_top {
-            >self.min_depth => {
+        let mut rebal: bool = (ask_depth <= self.min_depth) | (bid_depth <= self.min_depth);
+        rebal = true;
 
-            },
-            _ => {},
+        if rebal {
+            let old_prices = self.levels.clone();
+
+            self.new_levels(
+                self.levels[self.bid_pointer.to_usize().unwrap()].price,
+                self.levels[self.ask_pointer.to_usize().unwrap()].price,
+                self.min_step
+            );
+
+            self.apply_prices(old_prices);
+            true
+        } else {
+            false
         }
 
-        switch 
+    }
 
+    fn apply_prices(&mut self, old_prices: [Level; ORDER_BOOK_LEVELS]) {
+        // apply old price/quantity information to new levels
+        // will be called after a rebalance, eg the book will have moved
+
+        let previous_start_price = old_prices[0].price;
+        let new_start_price = self.levels[0].price;
+
+        // how many indexes we've moved up or down
+        let new_relative_pos: i32 = (previous_start_price - new_start_price / self.min_step).to_i32().unwrap();
+
+        if new_relative_pos > 0 {
+            // price went up - new_relative_pos:32
+            for (i, level) in self.levels.iter_mut().enumerate() {
+                if i >= new_relative_pos - 1 {
+                    let old_level = old_prices[i - new_relative_pos - 1];
+                    println!("new: {} old: {}", level.price, old_level.price);
+
+                } else {
+                    continue
+                }
+            }
+
+        } else {
+            // price went down - 0:(32 - new_relative_pos)
+
+
+        }
+        
     }
 
     fn new_levels(&mut self, best_bid_price: Decimal, best_ask_price: Decimal, min_step: Decimal) {
@@ -158,6 +207,9 @@ mod test {
 
         some_market.levels[29].quantity = Decimal::from_str("1234.5566778899").unwrap();
         assert_eq!(some_market.price_quantity(Decimal::from_str("12300.17").unwrap()), Decimal::from_str("1234.5566778899").unwrap());
+        
+        some_market.rebalance(); 
+    
     }
 
 
