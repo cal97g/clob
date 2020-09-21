@@ -11,7 +11,7 @@ Designed mostly with crypto in mind.
 # Potential Performance improvements
  - move from Decimal to an Integer representation of currency. This would be easy if given fiat restrictions,
  but more challenging taking into account crypto currency. The book operates on an assumption of min step & min price which allows
- very quick refernece to a particular price / quantity pair. Integer would be more efficient than Decimal for instantiation and most calculations.
+ very quick referance to a particular price / quantity pair. Integer would be more efficient than Decimal for instantiation and most calculations.
  - Investigate  BLAS/LAPACK - Considering the orderbook is relatively light on math this may be more relevant to deducing something
  from the book rather than actual book operations.
  - less assignments / pre-assignment. Rust offers some nice primitives for pre-asignment (?). We may wish to investigate these, though
