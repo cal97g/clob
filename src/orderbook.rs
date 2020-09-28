@@ -4,6 +4,19 @@ const ORDER_BOOK_LEVELS: usize = 32;
 const MIDDLE_LEVEL: u32 = 15;
 const MINIMUM_PAD: usize = 3;
 
+pub enum OrderbookUpdateType {
+    SetLevel,
+    LimitOrder,
+    FillOrKillOrder,
+    MarketOrder
+}
+
+pub const SET_LEVEL: OrderbookUpdateType  = OrderbookUpdateType::SetLevel;
+pub const LIMIT_ORDER: OrderbookUpdateType  = OrderbookUpdateType::SetLevel;
+pub const FILL_OR_KILL_ORDER: OrderbookUpdateType  = OrderbookUpdateType::SetLevel;
+pub const MARKET_ORDER: OrderbookUpdateType  = OrderbookUpdateType::SetLevel;
+
+
 #[derive(Default,Debug,Copy,Clone)]
 pub struct Level {
     // price in sats or cents
@@ -21,6 +34,21 @@ impl Level {
         
     }
 }
+
+pub struct OrderbookUpdate {
+    price: Decimal,
+
+    // should be negative if something is being removed from the book
+    quantity: Decimal,
+
+    order_type: OrderbookUpdateType,
+}
+
+enum Direction {
+    Buy,
+    Sell
+}
+
 
 #[derive(Default)]
 pub struct Orderbook {
@@ -44,6 +72,8 @@ pub struct Orderbook {
     // the latest update id the book has applied
     update_id: u64,
 }
+
+
 
 impl Orderbook {
     pub fn new(best_bid_price: Decimal, best_ask_price: Decimal, min_step: Decimal) -> Orderbook {
@@ -153,7 +183,6 @@ impl Orderbook {
     // where can I find the information for this price?
     pub fn price_index(&self, price_point: Decimal) -> Option<usize> {
         let index = ((price_point - self.start_price) / self.min_step).to_usize().unwrap();
-
         match index {
             0..=ORDER_BOOK_LEVELS => Some(index),
             _ => None
@@ -169,14 +198,48 @@ impl Orderbook {
         self.levels[self.price_index(price).unwrap()].quantity += quantity;
     }
 
-    pub fn market_order(&self, quantity: Decimal) {
+    pub fn update(&mut self, update_type: OrderbookUpdateType, update: OrderbookUpdate) -> bool {
 
-    }
+        let level_index_opt = self.price_index(update.price);
+        let level_idx: usize;
 
-    pub fn trade(&self, price: Decimal, quantity: Decimal) {
+        match level_index_opt {
+            Some(X) => {
+                level_idx = level_index_opt.unwrap();
+                true
+            },
+            None => return false,
+        };
 
+        let direction;
+        if update.quantity > Decimal::zero() {
+            direction = Direction::Buy;
+        } else {
+            direction = Direction::Sell;
+        }
+       
+
+        match update.order_type {
+            SET_LEVEL => {
+                self.levels[level_idx].quantity = update.quantity;
+            },
+            LIMIT_ORDER => {
+                self.levels[level_idx].quantity += update.quantity;
+            },
+            FILL_OR_KILL_ORDER => {
+
+
+            },
+            MARKET_ORDER => {
+                let quantity = update.quantity;
+
+            },
+        }
+
+        true
     }
 }
+
 
 
 #[cfg(test)]
